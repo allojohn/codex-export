@@ -1,6 +1,6 @@
 # codex-conversion
 
-把 Codex Desktop 的本地 `.jsonl` 会话记录，以及导出的 `.json` / `.jsonl` session 文件，转换成适合浏览的 HTML 聊天记录页面，整体交互和结构参考 `claude-code-transcripts-main`，但解析逻辑适配 Codex 客户端真实 session 格式。
+把 Codex Desktop 的本地 `.jsonl` 会话记录，以及导出的 `.json` / `.jsonl` session 文件，转换成适合浏览的 HTML conversion 页面，整体交互和结构参考 `claude-code-transcripts-main`，但解析逻辑适配 Codex 客户端真实 session 格式。
 
 ## 安装
 
@@ -105,7 +105,7 @@ Codex 没有对应 Claude 项目里的 `web` 会话 API 导入能力，所以这
 
 - 总索引页：列出所有 workspace
 - 每个 workspace 的索引页：列出该 workspace 下的 sessions
-- 每个 session 的 transcript 页面
+- 每个 session 的 conversion 页面
 
 默认会排除 agent / subagent sessions；只有加上 `--include-agents` 才会把这些会话也纳入归档。
 
@@ -138,7 +138,7 @@ Codex 没有对应 Claude 项目里的 `web` 会话 API 导入能力，所以这
 
 如果你想让 agent 更主动一点，也可以用这个版本：
 
-> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` and use it to operate `codex-conversion` for me. First ask me which session I want to export and whether I want `index.html` plus paged transcript files locally, a GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Then run the correct command and tell me where the result was generated.
+> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` and use it to operate `codex-conversion` for me. First ask me which session I want to export and whether I want `index.html` plus paged conversion files locally, a GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Then run the correct command and tell me where the result was generated.
 
 ## 已知限制
 

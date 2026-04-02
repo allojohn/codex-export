@@ -40,7 +40,7 @@ def sample_session_entries(workspace_name: str = "demo-workspace") -> list[dict]
             "payload": {
                 "type": "message",
                 "role": "user",
-                "content": [{"type": "input_text", "text": "Export this transcript"}],
+                "content": [{"type": "input_text", "text": "Export this conversion"}],
             },
         },
         {
@@ -75,7 +75,7 @@ def test_parse_session_file_supports_json_array(tmp_path: Path) -> None:
 
     assert meta["id"] == "session-123"
     assert len(turns) == 1
-    assert turns[0].prompt_preview == "Export this transcript"
+    assert turns[0].prompt_preview == "Export this conversion"
     assert turns[0].status == "completed"
 
 
@@ -90,7 +90,7 @@ def test_parse_session_file_supports_json_object_with_loglines(tmp_path: Path) -
 
     assert meta["id"] == "session-123"
     assert len(turns) == 1
-    assert turns[0].prompt_preview == "Export this transcript"
+    assert turns[0].prompt_preview == "Export this conversion"
 
 
 def test_generate_html_escapes_embedded_html_in_json_blocks(tmp_path: Path) -> None:
@@ -230,7 +230,7 @@ def test_real_excerpt_generates_expected_index_and_page_content(tmp_path: Path) 
     page_html = (output_dir / "page-001.html").read_text(encoding="utf-8")
 
     assert "real-excerpt-1" in index_html
-    assert "Codex Desktop transcript" in index_html
+    assert "Codex Desktop conversion" in index_html
     assert "1 turns" in index_html
     assert "4 entries" in index_html
     assert "1 tool calls" in index_html
@@ -292,7 +292,7 @@ def test_index_page_embeds_search_dataset_for_file_protocol_usage(
     generate_html(index_parity_session_path(), output_dir)
     index_html = (output_dir / "index.html").read_text(encoding="utf-8")
 
-    assert "window.__TRANSCRIPT_SEARCH_DATA__ =" in index_html
+    assert "window.__CONVERSION_SEARCH_DATA__ =" in index_html
     assert "page-001.html" in index_html
     assert "This assistant response is intentionally long" in index_html
 
@@ -313,7 +313,7 @@ def test_index_page_escapes_script_terminators_in_embedded_search_data(
                 "content": [
                     {
                         "type": "output_text",
-                        "text": "Contains </script><script>alert('x')</script> in transcript text.",
+                        "text": "Contains </script><script>alert('x')</script> in conversion text.",
                     }
                 ],
             },
@@ -325,7 +325,7 @@ def test_index_page_escapes_script_terminators_in_embedded_search_data(
     generate_html(session_file, output_dir)
     index_html = (output_dir / "index.html").read_text(encoding="utf-8")
 
-    assert "window.__TRANSCRIPT_SEARCH_DATA__ =" in index_html
+    assert "window.__CONVERSION_SEARCH_DATA__ =" in index_html
     assert "\\u003c/script\\u003e\\u003cscript\\u003ealert('x')\\u003c/script\\u003e" in index_html
     assert "</script><script>alert('x')</script>" not in index_html
 

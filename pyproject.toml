@@ -1,7 +1,7 @@
 [project]
 name = "codex-conversion"
 version = "0.1.0"
-description = "Convert Codex Desktop session files to HTML transcripts"
+description = "Convert Codex Desktop session files to HTML conversions"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"

@@ -9,7 +9,7 @@
   var modalCloseBtn = document.getElementById('modal-close-btn');
   var searchStatus = document.getElementById('search-status');
   var searchResults = document.getElementById('search-results');
-  var embeddedSearchData = Array.isArray(window.__TRANSCRIPT_SEARCH_DATA__) ? window.__TRANSCRIPT_SEARCH_DATA__ : [];
+  var embeddedSearchData = Array.isArray(window.__CONVERSION_SEARCH_DATA__) ? window.__CONVERSION_SEARCH_DATA__ : [];
   var isFileProtocol = window.location.protocol === 'file:';
 
   if (!searchBox || !modal || !searchInput || !searchBtn || !modalInput || !modalSearchBtn || !modalCloseBtn) {
@@ -209,7 +209,7 @@
 
     if (isFileProtocol) {
       var embeddedResults = processEmbeddedData(query);
-      searchStatus.textContent = 'Found ' + embeddedResults + ' result(s) in local transcript data';
+      searchStatus.textContent = 'Found ' + embeddedResults + ' result(s) in local conversion data';
       return;
     }
 

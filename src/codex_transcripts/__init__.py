@@ -1,4 +1,4 @@
-"""Convert Codex Desktop session JSON and JSONL files into browseable HTML transcripts."""
+"""Convert Codex Desktop session JSON and JSONL files into browseable HTML conversions."""
 
 from __future__ import annotations
 
@@ -647,7 +647,7 @@ def generate_html(input_path: Path, output_dir: Path) -> dict[str, Any]:
     index_html = template_index.render(
         css=CSS,
         js=JS,
-        transcript_title=build_transcript_title(meta, input_path),
+        conversion_title=build_conversion_title(meta, input_path),
         session_meta=build_session_meta(meta),
         prompt_num=len(turns),
         total_messages=sum(len(turn.entries) for turn in turns),
@@ -677,7 +677,7 @@ def generate_html(input_path: Path, output_dir: Path) -> dict[str, Any]:
         page_html = template_page.render(
             css=CSS,
             js=JS,
-            transcript_title=build_transcript_title(meta, input_path),
+            conversion_title=build_conversion_title(meta, input_path),
             page_num=page_num,
             total_pages=total_pages,
             pagination_html=build_pagination(page_num, total_pages),
@@ -688,7 +688,7 @@ def generate_html(input_path: Path, output_dir: Path) -> dict[str, Any]:
     return {"meta": meta, "turns": turns, "output_dir": output_dir}
 
 
-def build_transcript_title(meta: dict[str, Any], input_path: Path) -> str:
+def build_conversion_title(meta: dict[str, Any], input_path: Path) -> str:
     index = read_session_index(Path.home() / ".codex" / "session_index.jsonl")
     session_id = meta.get("id")
     if session_id and session_id in index:
@@ -789,7 +789,7 @@ def generate_batch_html(
 
 
 def default_output_dir(input_path: Path) -> Path:
-    temp_dir = Path(tempfile.mkdtemp(prefix="codex-transcript-"))
+    temp_dir = Path(tempfile.mkdtemp(prefix="codex-conversion-"))
     return temp_dir / input_path.stem
 
 
@@ -821,7 +821,7 @@ def fetch_url_to_tempfile(url: str) -> tuple[Path, str]:
     parsed = urlparse(url)
     stem = Path(parsed.path).stem or "session"
     suffix = ".jsonl" if parsed.path.endswith(".jsonl") else ".json"
-    temp_dir = Path(tempfile.mkdtemp(prefix="codex-transcript-url-"))
+    temp_dir = Path(tempfile.mkdtemp(prefix="codex-conversion-url-"))
     temp_file = temp_dir / f"{stem}{suffix}"
     temp_file.write_bytes(body)
     return temp_file, stem
@@ -995,7 +995,7 @@ def local(
         raise click.ClickException("Output must be a directory.")
     result = generate_html(session.path, destination)
     index_path = result["output_dir"] / "index.html"
-    click.echo(f"Transcript: {index_path}")
+    click.echo(f"Conversion: {index_path}")
     if include_json:
         json_dest = copy_source_json(session.path, result["output_dir"])
         click.echo(f"JSON: {json_dest} ({json_dest.stat().st_size / 1024:.1f} KB)")
@@ -1044,7 +1044,7 @@ def json_command(
 
     result = generate_html(resolved_file, destination)
     index_path = result["output_dir"] / "index.html"
-    click.echo(f"Transcript: {index_path}")
+    click.echo(f"Conversion: {index_path}")
     if include_json:
         json_dest = copy_source_json(resolved_file, result["output_dir"])
         click.echo(f"JSON: {json_dest} ({json_dest.stat().st_size / 1024:.1f} KB)")

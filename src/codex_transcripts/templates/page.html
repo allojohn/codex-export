@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ transcript_title }} · Page {{ page_num }}{% endblock %}
+{% block title %}{{ conversion_title }} · Page {{ page_num }}{% endblock %}
 
 {% block content %}
 <div class="hero">
-  <h1><a href="index.html" style="color: inherit; text-decoration: none;">{{ transcript_title }}</a></h1>
+  <h1><a href="index.html" style="color: inherit; text-decoration: none;">{{ conversion_title }}</a></h1>
   <p>Page {{ page_num }} / {{ total_pages }}</p>
 </div>
 {{ pagination_html|safe }}
