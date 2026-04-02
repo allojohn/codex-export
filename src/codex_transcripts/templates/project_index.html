@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_name }} · Codex Transcript Archive{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1><a href="../index.html" style="color: inherit; text-decoration: none;">{{ project_name }}</a></h1>
+  <p>{{ session_count }} sessions</p>
+</div>
+
+{% for session in sessions %}
+<div class="index-item">
+  <a href="{{ session.path.stem }}/index.html">
+    <div class="index-item-header">
+      <span>{{ session.thread_name }}</span>
+      <time datetime="{{ session.updated_at }}" data-timestamp="{{ session.updated_at }}">{{ session.updated_at }}</time>
+    </div>
+    <div class="index-item-content">
+      <p>{{ session.summary }}</p>
+      <p>{{ "%.1f"|format(session.size / 1024) }} KB{% if session.is_agent %} · agent{% endif %}</p>
+    </div>
+  </a>
+</div>
+{% endfor %}
+{% endblock %}

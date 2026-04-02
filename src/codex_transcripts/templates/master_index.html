@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Codex Transcript Archive{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Codex Transcript Archive</h1>
+  <p>{{ total_projects }} workspaces · {{ total_sessions }} sessions</p>
+</div>
+
+{% for project in projects %}
+<div class="index-item">
+  <a href="{{ project.name }}/index.html">
+    <div class="index-item-header">
+      <span>{{ project.name }}</span>
+      <span>{{ project.sessions|length }} sessions</span>
+    </div>
+    <div class="index-item-content">
+      {% if project.sessions %}
+      <p>{{ project.sessions[0].thread_name }}</p>
+      <p><time datetime="{{ project.sessions[0].updated_at }}" data-timestamp="{{ project.sessions[0].updated_at }}">{{ project.sessions[0].updated_at }}</time></p>
+      {% endif %}
+    </div>
+  </a>
+</div>
+{% endfor %}
+{% endblock %}

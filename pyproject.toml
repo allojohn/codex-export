@@ -1,0 +1,20 @@
+[project]
+name = "codex-transcripts"
+version = "0.1.0"
+description = "Convert Codex Desktop session files to HTML transcripts"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1.8",
+    "jinja2>=3.1.6",
+    "markdown>=3.8",
+    "questionary>=2.1.1",
+]
+
+[project.scripts]
+codex-transcripts = "codex_transcripts:main"
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ transcript_title }} · Codex Transcript{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>{{ transcript_title }}</h1>
+  <p>Codex Desktop transcript</p>
+  {% if session_meta %}
+  <div class="meta-grid">
+    {% for item in session_meta %}
+    <div class="meta-card">
+      <span class="meta-label">{{ item.label }}</span>
+      <div>{{ item.value }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<p class="summary">{{ prompt_num }} turns · {{ total_messages }} entries · {{ total_tool_calls }} tool calls · {{ total_pages }} pages</p>
+{{ pagination_html|safe }}
+{{ index_items_html|safe }}
+{{ pagination_html|safe }}
+{% endblock %}

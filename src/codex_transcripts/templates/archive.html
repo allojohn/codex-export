@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Codex Transcript Archive{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Codex Transcript Archive</h1>
+  <p>{{ sessions|length }} sessions</p>
+</div>
+
+{% for session in sessions %}
+<div class="index-item">
+  <a href="{{ session.session_id }}/index.html">
+    <div class="index-item-header">
+      <span>{{ session.thread_name }}</span>
+      <time datetime="{{ session.updated_at }}" data-timestamp="{{ session.updated_at }}">{{ session.updated_at }}</time>
+    </div>
+    <div class="index-item-content">
+      <p>{{ session.summary }}</p>
+      {% if session.cwd %}
+      <p><code>{{ session.cwd }}</code></p>
+      {% endif %}
+    </div>
+  </a>
+</div>
+{% endfor %}
+{% endblock %}
