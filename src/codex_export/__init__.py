@@ -29,7 +29,7 @@ LONG_TEXT_THRESHOLD = 300
 COMMIT_PATTERN = re.compile(r"\[[\w\-/]+ ([a-f0-9]{7,})\] (.+?)(?:\n|$)")
 
 _jinja_env = Environment(
-    loader=PackageLoader("codex_transcripts", "templates"),
+    loader=PackageLoader("codex_export", "templates"),
     autoescape=True,
 )
 _macros_template = _jinja_env.get_template("macros.html")
@@ -958,10 +958,35 @@ def pick_local_session(source_dir: Path, limit: int) -> SessionInfo | None:
 
 
 @click.group(invoke_without_command=True)
+@click.option("--source", type=click.Path(path_type=Path), default=Path.home() / ".codex" / "sessions")
+@click.option("--limit", type=int, default=10)
+@click.option("-o", "--output", type=click.Path(path_type=Path))
+@click.option("-a", "--output-auto", is_flag=True, help="Auto-name output subdirectory based on session filename.")
+@click.option("--gist", is_flag=True, help="Upload to GitHub Gist and output a gisthost.github.io URL.")
+@click.option("--json", "include_json", is_flag=True, help="Include the original session file in the output directory.")
+@click.option("--open", "should_open", is_flag=True, help="Open the generated index.html in your default browser.")
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(
+    ctx: click.Context,
+    source: Path,
+    limit: int,
+    output: Path | None,
+    output_auto: bool,
+    gist: bool,
+    include_json: bool,
+    should_open: bool,
+) -> None:
     if ctx.invoked_subcommand is None:
-        ctx.invoke(local)
+        ctx.invoke(
+            local,
+            source=source,
+            limit=limit,
+            output=output,
+            output_auto=output_auto,
+            gist=gist,
+            include_json=include_json,
+            should_open=should_open,
+        )
 
 
 @cli.command()

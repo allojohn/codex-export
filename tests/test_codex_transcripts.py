@@ -3,9 +3,10 @@ import re
 from pathlib import Path
 
 import pytest
+from click.testing import CliRunner
 
-import codex_transcripts
-from codex_transcripts import generate_batch_html, generate_html, parse_session_file
+import codex_export
+from codex_export import cli, generate_batch_html, generate_html, parse_session_file
 
 
 def write_jsonl_session(path: Path, entries: list[dict]) -> None:
@@ -176,14 +177,14 @@ def test_generate_batch_html_skips_failed_sessions(tmp_path: Path, monkeypatch: 
     write_jsonl_session(good_session, sample_session_entries("workspace-a"))
     write_jsonl_session(broken_session, sample_session_entries("workspace-a"))
 
-    original_generate_html = codex_transcripts.generate_html
+    original_generate_html = codex_export.generate_html
 
     def flaky_generate_html(input_path: Path, output_dir: Path) -> dict:
         if input_path.stem == "broken":
             raise RuntimeError("simulated render failure")
         return original_generate_html(input_path, output_dir)
 
-    monkeypatch.setattr(codex_transcripts, "generate_html", flaky_generate_html)
+    monkeypatch.setattr(codex_export, "generate_html", flaky_generate_html)
 
     output_dir = tmp_path / "archive"
     result = generate_batch_html(source_dir, output_dir)
@@ -230,7 +231,7 @@ def test_real_excerpt_generates_expected_index_and_page_content(tmp_path: Path) 
     page_html = (output_dir / "page-001.html").read_text(encoding="utf-8")
 
     assert "real-excerpt-1" in index_html
-    assert "Codex Desktop conversion" in index_html
+    assert "Codex Conversation Export" in index_html
     assert "1 turns" in index_html
     assert "4 entries" in index_html
     assert "1 tool calls" in index_html
@@ -363,3 +364,46 @@ def test_commit_timeline_message_is_cleaned_from_tool_output_wrapper(
     assert match is not None
     assert match.group(1) == "Add release notes"
     assert "&#34;}}" not in index_html
+
+
+def test_root_command_accepts_local_options_and_invokes_default_local_command(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_dir = tmp_path / "output"
+
+    class FakePrompt:
+        def ask(self) -> str:
+            return "selected"
+
+    def fake_select(_message: str, choices: list[str]) -> FakePrompt:
+        assert choices
+        return FakePrompt()
+
+    def fake_pick_local_session(source_dir: Path, limit: int):
+        assert source_dir == Path("tests/fixtures")
+        assert limit == 1
+        return codex_export.SessionInfo(
+            path=Path(__file__).parent / "fixtures" / "real_session_excerpt.jsonl",
+            session_id="real-excerpt-1",
+            thread_name="fixture-thread",
+            updated_at="2026-04-01T10:00:00Z",
+            summary="fixture summary",
+            cwd="/tmp/fixture",
+            workspace_name="fixture",
+            size=123,
+        )
+
+    monkeypatch.setattr(codex_export.questionary, "select", fake_select)
+    monkeypatch.setattr(codex_export, "pick_local_session", fake_pick_local_session)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--source", "tests/fixtures", "--limit", "1", "-o", str(output_dir)],
+    )
+
+    assert result.exit_code == 0
+    assert "Conversion:" in result.output
+    assert (output_dir / "index.html").exists()
+    assert (output_dir / "page-001.html").exists()

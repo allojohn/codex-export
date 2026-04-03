@@ -1,149 +1,168 @@
-# codex-conversion
+# codex-export
 
-把 Codex Desktop 的本地 `.jsonl` 会话记录，以及导出的 `.json` / `.jsonl` session 文件，转换成适合浏览的 HTML conversion 页面，整体交互和结构参考 `claude-code-transcripts-main`，但解析逻辑适配 Codex 客户端真实 session 格式。
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
-## 安装
+Export Codex Desktop session records as browsable, shareable HTML pages. `codex-export` supports local exports, batch archives, and GitHub Gist uploads with ready-to-share preview links. The overall interaction model is inspired by [simonw/claude-code-transcripts](https://github.com/simonw/claude-code-transcripts), but the parser is adapted to the real Codex session format.
 
-如果你只是想直接安装这个命令行工具，推荐：
+## Install
 
-```bash
-git clone git@github.com:allojohn/codex-transcripts.git
-cd codex-transcripts
-uv tool install .
-```
-
-安装完成后可以运行：
+Install from PyPI:
 
 ```bash
-codex-conversion --help
+uv tool install codex-export
 ```
 
-如果 `codex-conversion` 找不到，通常是因为 `~/.local/bin` 还没加到 `PATH`。可以执行：
+Then run:
+
+```bash
+codex-export --help
+```
+
+If `codex-export` is not found, you may need to add `~/.local/bin` to your `PATH`:
 
 ```bash
 uv tool update-shell
 ```
 
-如果你是在本仓库里做开发，再使用：
+For local development:
 
 ```bash
+git clone git@github.com:allojohn/codex-transcripts.git
+cd codex-transcripts
 uv sync
+uv run codex-export --help
 ```
 
-然后用开发模式运行：
+## For Agents
+
+You can give this prompt to an agent:
+
+> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` and use it to operate `codex-export` for me. First ask which Codex session I want to export. Then ask whether I want local HTML files, a shareable GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Next, run the correct command and tell me the output path or share link.
+
+## Share First
+
+`codex-export` is especially useful for two things:
+
+1. Exporting a Codex conversation into browsable HTML
+2. Uploading it to GitHub Gist and getting a shareable preview link
+
+Most common sharing command:
 
 ```bash
-uv run codex-conversion --help
+codex-export json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl --gist
 ```
 
-## 用法
-
-直接从本地最近会话里挑选：
+Or pick a recent local session and upload it directly:
 
 ```bash
-uv run codex-conversion
-uv run codex-conversion local
+codex-export --gist
 ```
 
-转换指定会话文件：
+On success, the command prints:
+
+- The Gist URL
+- A `gisthost.github.io` preview URL
+
+That means other people can open the exported page directly without running the tool locally.
+
+## Common Commands
+
+Pick from recent local sessions:
 
 ```bash
-uv run codex-conversion json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl -o ./output
-uv run codex-conversion json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl --open
+codex-export
+codex-export local
 ```
 
-也支持从 URL 直接拉取 JSON/JSONL：
+Export a specific session file:
 
 ```bash
-uv run codex-conversion json https://example.com/session.jsonl -o ./output
+codex-export json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl -o ./output
+codex-export json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl --open
 ```
 
-上传到 GitHub Gist 并拿到预览链接：
+Export from a remote JSON/JSONL URL:
 
 ```bash
-uv run codex-conversion json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl --gist
-uv run codex-conversion --gist
+codex-export json https://example.com/session.jsonl -o ./output
 ```
 
-批量生成归档：
+Upload to GitHub Gist and get a preview link:
 
 ```bash
-uv run codex-conversion all -o ./codex-archive
-uv run codex-conversion all --dry-run
+codex-export json ~/.codex/sessions/2026/03/31/rollout-xxxx.jsonl --gist
+codex-export --gist
 ```
 
-如果没有传 `-o/--output`，`local` 和 `json` 会默认写到临时目录；当没有传 `-o`、没有启用 `--gist`、也没有启用 `-a/--output-auto` 时，会自动打开结果页。
+Generate a full archive:
 
-## 命令
+```bash
+codex-export all -o ./codex-archive
+codex-export all --dry-run
+```
 
-- `local` / 默认命令：从 `~/.codex/sessions` 读取最近本地会话
-- `json`：转换指定 `.json` / `.jsonl` 文件，或远程 URL
-- `all`：转换本地全部会话，生成可浏览 archive
+If you do not pass `-o/--output`, both `local` and `json` write to a temporary directory by default. If you do not pass `-o`, do not enable `--gist`, and do not enable `-a/--output-auto`, the result page opens automatically.
 
-Codex 没有对应 Claude 项目里的 `web` 会话 API 导入能力，所以这里没有实现 `web` 子命令。
+## Commands
 
-## 输出选项
+- `local` or the default command: read recent local sessions from `~/.codex/sessions`
+- `json`: export a specific `.json` / `.jsonl` file, or a remote URL
+- `all`: export all local sessions into a browsable archive
 
-`local` 和 `json` 支持这些选项：
+Codex does not currently have an equivalent of the Claude project's `web` session import API, so this project does not implement a `web` command.
 
-- `-o, --output DIRECTORY`：输出目录；默认写到临时目录
-- `-a, --output-auto`：自动按 session 文件名创建子目录
-- `--source PATH`：仅 `local` 支持，自定义本地会话目录
-- `--limit INTEGER`：仅 `local` 支持，控制交互列表里展示多少个最近会话
-- `--open`：生成后打开 `index.html`
-- `--gist`：上传 HTML 到 GitHub Gist 并输出 `gisthost.github.io` 预览链接
-- `--json`：把原始 session 文件一起复制到输出目录
+## Output Options
 
-生成结果的页面结构是：
+`local` and `json` support:
 
-- `index.html`：索引页，只展示每个 turn 的 user 摘要
-- `page-001.html`、`page-002.html` ...：完整消息分页，包含 assistant、tool call、tool result、commentary 等完整内容
+- `-o, --output DIRECTORY`: output directory; defaults to a temporary directory
+- `-a, --output-auto`: automatically create a subdirectory based on the session filename
+- `--source PATH`: `local` only, override the local session directory
+- `--limit INTEGER`: `local` only, control how many recent sessions appear in the picker
+- `--open`: open `index.html` after export
+- `--gist`: upload HTML to GitHub Gist and print a `gisthost.github.io` preview link
+- `--json`: copy the original session file into the output directory
 
-## 批量归档
+Generated output is structured like this:
 
-`all` 命令会生成三层结构：
+- `index.html`: index page with one summary entry per turn
+- `page-001.html`, `page-002.html`, ...: paginated full content including assistant messages, tool calls, tool results, commentary, and more
 
-- 总索引页：列出所有 workspace
-- 每个 workspace 的索引页：列出该 workspace 下的 sessions
-- 每个 session 的 conversion 页面
+## Batch Archive
 
-默认会排除 agent / subagent sessions；只有加上 `--include-agents` 才会把这些会话也纳入归档。
+The `all` command generates a three-level archive:
 
-`all` 支持这些选项：
+- A top-level index of all workspaces
+- One index page per workspace
+- One export page per session
 
-- `--source DIRECTORY`：源目录，默认 `~/.codex/sessions`
-- `-o, --output DIRECTORY`：输出目录，默认 `./codex-archive`
-- `--include-agents`：包含 agent / subagent sessions
-- `--dry-run`：只预览会转换哪些内容，不写文件
-- `--open`：生成后打开 archive 首页
-- `-q, --quiet`：安静模式，只输出错误
+Agent and subagent sessions are excluded by default. Add `--include-agents` to include them.
 
-## 当前支持
+`all` supports:
 
-- `local`：交互式选择最近本地会话
-- `json`：转换本地或远程 `.json` / `.jsonl`
-- `all`：按 workspace 分组生成 archive
+- `--source DIRECTORY`: source directory, default `~/.codex/sessions`
+- `-o, --output DIRECTORY`: output directory, default `./codex-archive`
+- `--include-agents`: include agent and subagent sessions
+- `--dry-run`: show what would be exported without writing files
+- `--open`: open the archive index after generation
+- `-q, --quiet`: only print errors
+
+## Current Features
+
+- `local`: interactive picker for recent local sessions
+- `json`: export local or remote `.json` / `.jsonl`
+- `all`: generate a workspace-grouped archive
 - `-a / --output-auto`
 - `--json`
 - `--open`
-- `--gist`：上传生成的 HTML 到 GitHub Gist，并输出 `gisthost.github.io` 预览链接
-- 多页转写：按 Codex turn 分页
-- Gist 预览修复：自动注入相对链接修复脚本，保证分页和锚点在 `gisthost.github.io` 下可用
+- `--gist`: upload generated HTML to GitHub Gist and print a shareable preview link
+- Multi-page exports: paginated by Codex turn
+- Gist preview fixups: automatically inject relative-link fixes for `gisthost.github.io`
 
-## 给 Agent 的一句话说明
+## Limitations
 
-可以直接把下面这段话复制给 agent：
-
-> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` to learn how `codex-conversion` works. Then ask me which Codex session I want to convert, whether I want local HTML, gist HTML, archive output, or just the source JSONL copied out, and run the right command for me.
-
-如果你想让 agent 更主动一点，也可以用这个版本：
-
-> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` and use it to operate `codex-conversion` for me. First ask me which session I want to export and whether I want `index.html` plus paged conversion files locally, a GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Then run the correct command and tell me where the result was generated.
-
-## 已知限制
-
-- `local` / `all` 目前只扫描 Codex 本地 `.jsonl` 会话目录，不读 SQLite 历史库
-- `reasoning.encrypted_content` 不会解密，只会显示可见 summary
-- 一些 `event_msg` 是 `response_item` 的重复镜像，页面里会去重并优先展示最终可读消息
-- `--gist` 依赖 `gh` 已安装且完成 `gh auth login`
-- `web` 子命令未实现，因为目前没有对应的 Codex Web session 导入接口
+- `local` and `all` currently scan Codex local `.jsonl` session directories only; they do not read the SQLite history store
+- `reasoning.encrypted_content` is not decrypted; only visible summaries are shown
+- Some `event_msg` items mirror `response_item` entries; the rendered page de-duplicates these and prefers the final readable form
+- `--gist` requires `gh` to be installed and authenticated with `gh auth login`
+- No `web` command is implemented because Codex does not currently expose a corresponding web-session import interface

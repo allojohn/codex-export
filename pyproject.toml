@@ -1,7 +1,7 @@
 [project]
-name = "codex-conversion"
-version = "0.1.0"
-description = "Convert Codex Desktop session files to HTML conversions"
+name = "codex-export"
+version = "0.1.1"
+description = "Export Codex Desktop session files as shareable HTML pages"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
@@ -13,14 +13,14 @@ dependencies = [
 ]
 
 [project.scripts]
-codex-conversion = "codex_transcripts:main"
+codex-export = "codex_export:main"
 
 [build-system]
 requires = ["uv_build>=0.9.7,<0.10.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = "codex_transcripts"
+module-name = "codex_export"
 
 [dependency-groups]
 dev = [
