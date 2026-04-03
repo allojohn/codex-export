@@ -37,7 +37,7 @@ uv run codex-export --help
 
 You can give this prompt to an agent:
 
-> Read `/Users/allojohn/www.allojohn.com/code.allojohn.com/codex-transcripts/README.md` and use it to operate `codex-export` for me. First ask which Codex session I want to export. Then ask whether I want local HTML files, a shareable GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Next, run the correct command and tell me the output path or share link.
+> Read `https://github.com/allojohn/codex-transcripts/blob/main/README.md` and use it to operate `codex-export` for me. First ask which Codex session I want to export. Then ask whether I want local HTML files, a shareable GitHub Gist preview link, a full archive, or the original session JSONL copied into the output directory. Next, run the correct command and tell me the output path or share link.
 
 ## Share First
 
