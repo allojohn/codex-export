@@ -55,6 +55,13 @@
 </div>
 {% endmacro %}
 
+{% macro process_group(group_id, summary_label, content_html) %}
+<details class="process-group" id="{{ group_id }}">
+  <summary>{{ summary_label }}</summary>
+  <div class="process-group-body">{{ content_html|safe }}</div>
+</details>
+{% endmacro %}
+
 {% macro tool_use(tool_name, description, input_json, tool_id) %}
 <div class="tool-use" data-tool-id="{{ tool_id }}">
   <div class="tool-header">{{ tool_name }}</div>

@@ -207,6 +207,63 @@ def test_generate_batch_html_dry_run_reports_counts(tmp_path: Path) -> None:
     assert result["total_sessions"] == 1
 
 
+def test_generate_html_collapses_intermediate_codex_process_by_default(tmp_path: Path) -> None:
+    session_file = tmp_path / "session.jsonl"
+    entries = sample_session_entries()
+    entries.insert(
+        3,
+        {
+            "type": "response_item",
+            "timestamp": "2026-04-01T10:00:02.100000Z",
+            "payload": {
+                "type": "reasoning",
+                "summary": ["Planning the export steps."],
+            },
+        },
+    )
+    entries.insert(
+        4,
+        {
+            "type": "response_item",
+            "timestamp": "2026-04-01T10:00:02.200000Z",
+            "payload": {
+                "type": "custom_tool_call",
+                "name": "apply_patch",
+                "input": "*** Begin Patch\n*** End Patch\n",
+            },
+        },
+    )
+    entries.insert(
+        5,
+        {
+            "type": "response_item",
+            "timestamp": "2026-04-01T10:00:02.300000Z",
+            "payload": {
+                "type": "custom_tool_call_output",
+                "output": json.dumps({"output": "Patched successfully."}, ensure_ascii=False),
+            },
+        },
+    )
+    write_jsonl_session(session_file, entries)
+
+    output_dir = tmp_path / "output"
+    generate_html(session_file, output_dir)
+    html = (output_dir / "page-001.html").read_text(encoding="utf-8")
+
+    assert '<details class="process-group"' in html
+    assert "Codex process (3 items: Reasoning, Tool Call, Tool Result)" in html
+    assert 'class="floating-process-controls"' in html
+    assert "Hide details" in html
+    assert "floating-process-btn-right" in html
+    assert "floating-process-btn-left" not in html
+    assert "findActiveGroup" in html
+    assert "const groupTop = activeGroup.getBoundingClientRect().top + window.scrollY;" in html
+    assert "window.scrollTo({ top: Math.max(groupTop - 16, 0), behavior: 'auto' });" in html
+    assert "activeGroup.open = false;" in html
+    assert html.index("Export this conversion") < html.index("Codex process (3 items:")
+    assert html.index("Codex process (3 items:") < html.index("Working on it.")
+
+
 def test_real_excerpt_skips_mirrored_events_and_keeps_custom_tool_output(tmp_path: Path) -> None:
     fixture_path = Path(__file__).parent / "fixtures" / "real_session_excerpt.jsonl"
     output_dir = tmp_path / "output"

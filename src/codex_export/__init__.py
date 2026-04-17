@@ -544,6 +544,76 @@ def render_entry(entry: TranscriptEntry) -> str:
     )
 
 
+def build_process_group_id(entries: list[TranscriptEntry]) -> str:
+    first_timestamp = entries[0].timestamp if entries else "process"
+    last_timestamp = entries[-1].timestamp if entries else "process"
+    return (
+        f"process-{first_timestamp}-{last_timestamp}"
+        .replace(":", "-")
+        .replace(".", "-")
+    )
+
+
+def summarize_hidden_entries(entries: list[TranscriptEntry]) -> str:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        counts[entry.role_label] = counts.get(entry.role_label, 0) + 1
+
+    parts: list[str] = []
+    for label, count in counts.items():
+        if count == 1:
+            parts.append(label)
+        else:
+            parts.append(f"{count} {label}")
+
+    detail = ", ".join(parts[:3])
+    if len(parts) > 3:
+        detail += ", ..."
+    item_label = "item" if len(entries) == 1 else "items"
+    return f"Codex process ({len(entries)} {item_label}: {detail})"
+
+
+def build_turn_messages_html(turn: Turn) -> str:
+    final_assistant_index: int | None = None
+    for idx in range(len(turn.entries) - 1, -1, -1):
+        if turn.entries[idx].role_class == "assistant":
+            final_assistant_index = idx
+            break
+
+    visible_indexes = {
+        idx
+        for idx, entry in enumerate(turn.entries)
+        if entry.role_class == "user"
+    }
+    if final_assistant_index is not None:
+        visible_indexes.add(final_assistant_index)
+
+    rendered: list[str] = []
+    hidden_entries: list[TranscriptEntry] = []
+
+    def flush_hidden() -> None:
+        if not hidden_entries:
+            return
+        rendered.append(
+            _macros.process_group(
+                build_process_group_id(hidden_entries),
+                summarize_hidden_entries(hidden_entries),
+                "".join(render_entry(entry) for entry in hidden_entries),
+            )
+        )
+        hidden_entries.clear()
+
+    for idx, entry in enumerate(turn.entries):
+        if idx in visible_indexes:
+            flush_hidden()
+            rendered.append(render_entry(entry))
+        else:
+            hidden_entries.append(entry)
+
+    flush_hidden()
+    return "".join(rendered)
+
+
 def build_pagination(current_page: int, total_pages: int) -> str:
     return _macros.pagination(current_page, total_pages)
 
@@ -639,7 +709,7 @@ def generate_html(input_path: Path, output_dir: Path) -> dict[str, Any]:
             idx,
             turn.prompt_preview,
             turn.status,
-            "".join(render_entry(entry) for entry in turn.entries),
+            build_turn_messages_html(turn),
         )
         for idx, turn in enumerate(turns, start=1)
     )
@@ -670,7 +740,7 @@ def generate_html(input_path: Path, output_dir: Path) -> dict[str, Any]:
                 start + offset + 1,
                 turn.prompt_preview,
                 turn.status,
-                "".join(render_entry(entry) for entry in turn.entries),
+                build_turn_messages_html(turn),
             )
             for offset, turn in enumerate(turns_for_page)
         )
@@ -1245,6 +1315,70 @@ body {
 .turn-body {
   padding: 14px;
 }
+.process-group {
+  margin-bottom: 16px;
+  border: 1px dashed rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+.process-group summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  list-style: none;
+}
+.process-group summary::-webkit-details-marker {
+  display: none;
+}
+.process-group summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform 0.15s ease;
+}
+.process-group[open] summary::before {
+  transform: rotate(90deg);
+}
+.process-group-body {
+  padding: 0 14px 14px;
+}
+.process-group-body .message:last-child {
+  margin-bottom: 0;
+}
+.floating-process-controls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+.floating-process-btn {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+.floating-process-btn-right {
+  right: 20px;
+}
+.floating-process-btn:hover {
+  color: var(--text-color);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+@media (max-width: 1120px) {
+  .floating-process-btn-right {
+    right: 12px;
+  }
+}
 .message.user { background: var(--user-bg); border-left: 4px solid var(--user-border); }
 .message.assistant { background: var(--card-bg); border-left: 4px solid var(--assistant-border); }
 .message.commentary { background: var(--commentary-bg); border-left: 4px solid var(--commentary-border); }
@@ -1614,4 +1748,71 @@ document.querySelectorAll('.truncatable').forEach(function(wrapper) {
     });
   }
 });
+
+(function() {
+  const controls = document.querySelector('.floating-process-controls');
+  if (!controls) return;
+  const buttons = controls.querySelectorAll('.floating-process-btn');
+  let activeGroup = null;
+
+  function hideControls() {
+    activeGroup = null;
+    controls.hidden = true;
+    controls.setAttribute('aria-hidden', 'true');
+  }
+
+  function showControls(group) {
+    activeGroup = group;
+    controls.hidden = false;
+    controls.setAttribute('aria-hidden', 'false');
+  }
+
+  function findActiveGroup() {
+    const openGroups = Array.from(document.querySelectorAll('details.process-group[open]'));
+    if (!openGroups.length) return null;
+
+    const viewportProbe = window.innerHeight * 0.5;
+    const centered = openGroups.find(function(group) {
+      const rect = group.getBoundingClientRect();
+      return rect.top <= viewportProbe && rect.bottom >= viewportProbe;
+    });
+    if (centered) return centered;
+
+    return openGroups.find(function(group) {
+      const rect = group.getBoundingClientRect();
+      return rect.top < window.innerHeight && rect.bottom > 0;
+    }) || null;
+  }
+
+  function syncControls() {
+    const group = findActiveGroup();
+    if (!group) {
+      hideControls();
+      return;
+    }
+    showControls(group);
+  }
+
+  buttons.forEach(function(button) {
+    button.addEventListener('click', function() {
+      if (!activeGroup) return;
+      const groupTop = activeGroup.getBoundingClientRect().top + window.scrollY;
+      button.blur();
+      activeGroup.open = false;
+      window.requestAnimationFrame(function() {
+        window.scrollTo({ top: Math.max(groupTop - 16, 0), behavior: 'auto' });
+      });
+      syncControls();
+    });
+  });
+
+  document.addEventListener('toggle', function(event) {
+    if (event.target && event.target.matches('details.process-group')) {
+      syncControls();
+    }
+  }, true);
+  window.addEventListener('scroll', syncControls, { passive: true });
+  window.addEventListener('resize', syncControls);
+  syncControls();
+})();
 """
